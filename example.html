@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Didomi CMP Proxy Test</title>
+  <style>
+    body {
+      background: #23272e;
+      color: #eaeaea;
+      font-family: 'Fira Mono', 'Consolas', monospace;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #282c34;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #0008;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #61dafb;
+    }
+    button {
+      background: #61dafb;
+      color: #23272e;
+      border: none;
+      border-radius: 4px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-right: 12px;
+      margin-bottom: 24px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #21a1f3;
+    }
+    .ide {
+      background: #1e2228;
+      color: #b5f4a5;
+      border-radius: 6px;
+      padding: 20px;
+      font-size: 1rem;
+      margin-bottom: 32px;
+      overflow-x: auto;
+      min-height: 120px;
+      box-shadow: 0 1px 4px #0006;
+    }
+    .logs {
+      background: #181a20;
+      color: #f7c873;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 0.95rem;
+      min-height: 80px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 1px 4px #0004;
+    }
+    .log-entry {
+      margin-bottom: 6px;
+      font-size: 0.95em;
+    }
+    .log-method {
+      color: #61dafb;
+      font-weight: bold;
+    }
+    .log-url {
+      color: #b5f4a5;
+    }
+    .log-path {
+      color: #f7c873;
+    }
+  </style>
+  <script>
+    window.didomiConfig = window.didomiConfig || {};
+    window.didomiConfig.user = { country: "FR" };
+    window.didomiConfig.notice = "J3nR2TTU";
+    window.didomiConfig.apiKey = "24cd3901-9da4-4643-96a3-9b1c573b5264";
+    window.didomiConfig.sdkPath = "https:YOUR_DOMAIN/consent/";
+    window.didomiConfig.apiPath = "https://YOUR_DOMAIN/consent/api";
+  </script>
+  <script type="text/javascript">(function(){function i(e){if(!window.frames[e]){if(document.body&&document.body.firstChild){var t=document.body;var n=document.createElement("iframe");n.style.display="none";n.name=e;n.title=e;t.insertBefore(n,t.firstChild)}else{setTimeout(function(){i(e)},5)}}}function e(n,o,r,f,s){function e(e,t,n,i){if(typeof n!=="function"){return}if(!window[o]){window[o]=[]}var a=false;if(s){a=s(e,i,n)}if(!a){window[o].push({command:e,version:t,callback:n,parameter:i})}}e.stub=true;e.stubVersion=2;function t(i){if(!window[n]||window[n].stub!==true){return}if(!i.data){return}var a=typeof i.data==="string";var e;try{e=a?JSON.parse(i.data):i.data}catch(t){return}if(e[r]){var o=e[r];window[n](o.command,o.version,function(e,t){var n={};n[f]={returnValue:e,success:t,callId:o.callId};if(i.source){i.source.postMessage(a?JSON.stringify(n):n,"*")}},o.parameter)}}if(typeof window[n]!=="function"){window[n]=e;if(window.addEventListener){window.addEventListener("message",t,false)}else{window.attachEvent("onmessage",t)}}}e("__tcfapi","__tcfapiBuffer","__tcfapiCall","__tcfapiReturn");i("__tcfapiLocator")})();</script><script type="text/javascript">(function(){(function(e,r){var t=document.createElement("link");t.rel="preconnect";t.as="script";var n=document.createElement("link");n.rel="dns-prefetch";n.as="script";var i=document.createElement("script");i.id="spcloader";i.type="text/javascript";i["async"]=true;i.charset="utf-8";var o="https://YOUR_DOMAIN/consent/"+e+"/loader.js?target_type=notice&target="+r;if(window.didomiConfig&&window.didomiConfig.user){var a=window.didomiConfig.user;var c=a.country;var d=a.region;if(c){o=o+"&country="+c;if(d){o=o+"&region="+d}}}t.href="https://YOUR_DOMAIN/consent/";n.href="https://YOUR_DOMAIN/consent/";i.src=o;var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s);s.parentNode.insertBefore(n,s);s.parentNode.insertBefore(i,s)})("24cd3901-9da4-4643-96a3-9b1c573b5264","J3nR2TTU")})();</script>
+</head>
+<body>
+  <div class="container">
+    <h1>Didomi CMP Proxy Test</h1>
+    <button id="get-status">Get Current User Status</button>
+    <button id="open-notice">Open Notice</button>
+    <div class="ide" id="result">Click the button to get user status...</div>
+    <h2>Network Logs (CMP only)</h2>
+    <div class="logs" id="logs"></div>
+  </div>
+  <script>
+    // Log panel logic
+    const logs = document.getElementById('logs');
+    function logRequest(method, url) {
+      try {
+        const u = new URL(url, window.location.origin);
+        if (!u.pathname.startsWith('/consent/')) return;
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span class="log-method">${method}</span> <span class="log-url">${u.origin}</span><span class="log-path">${u.pathname}</span>`;
+        logs.appendChild(entry);
+        logs.scrollTop = logs.scrollHeight;
+      } catch (e) {}
+    }
+    // Patch fetch
+    const origFetch = window.fetch;
+    window.fetch = function(...args) {
+      logRequest('FETCH', args[0]);
+      return origFetch.apply(this, args);
+    };
+    // Patch XHR
+    const origOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      logRequest(method, url);
+      return origOpen.call(this, method, url, ...rest);
+    };
+    // Button logic
+    document.getElementById('get-status').onclick = async function() {
+      const result = document.getElementById('result');
+      result.textContent = 'Loading...';
+      try {
+        if (!window.Didomi || !Didomi.getCurrentUserStatus) {
+          result.textContent = 'Didomi SDK not loaded.';
+          return;
+        }
+        const status = await Didomi.getCurrentUserStatus();
+        result.innerHTML = '<pre>' + JSON.stringify(status, null, 2) + '</pre>';
+      } catch (e) {
+        result.textContent = 'Error: ' + e;
+      }
+    };
+    
+    document.getElementById('open-notice').onclick = async function() {
+      const result = document.getElementById('result');
+      result.textContent = 'Opening notice...';
+      try {
+        if (!window.Didomi || !Didomi.preferences.show) {
+          result.textContent = 'Didomi SDK not loaded.';
+          return;
+        }
+        Didomi.preferences.show();
+        result.textContent = 'Notice opened successfully.';
+      } catch (e) {
+        result.textContent = 'Error: ' + e;
+      }
+    };    
+  </script>
+</body>
+</html> 
+
+
